@@ -1,0 +1,59 @@
+# Apt update && upgrade
+sudo apt-get update
+sudo apt-get dist-upgrade
+
+# Install dependencies
+sudo apt-get install attr build-essential libacl1-dev libattr1-dev \
+libblkid-dev libreadline-dev python-dev libpam0g-dev python-dnspython \
+gdb pkg-config libpopt-dev libldap2-dev dnsutils libbsd-dev attr \
+krb5-user docbook-xsl libcups2-dev acl ntp ntpdate winbind
+
+# Set server static IP
+sudo nano /etc/network/interfaces
+iface eth0 inet static
+  address 192.168.1.XXX
+  netmask 255.255.255.0
+  gateway 192.168.1.1
+  # add temporary upstream dns entries
+  dns-nameservers 192.168.1.XXX 192.168.1.1
+  
+# Verify Hostname
+sudo nano /etc/hostname
+
+# Allow attr & acls on partitions
+sudo nano /etc/fstab
+UUID=xyzxyzxy-xyzx-xyzx-xyzx-xyzxyzxyzxyzxy    /       ext4      user_xattr,acl,barrier=1,errors=remount-ro     0     1
+
+# Set hostname in hosts dns record
+sudo nano /etc/hosts
+127.0.1.1     SERVERNAME.DOMAIN.COM    SERVERNAME
+
+# Install samba
+sudo apt-get install samba smbclient
+
+# Move original smb.conf
+sudo mv /etc/samba/smb.conf /etc/samba/smb.conf.original
+
+# DOMAIN PROVISION
+sudo samba-tool domain provision --use-rfc2307 --interactive
+DOMAIN:DOMAIN_NAME.COM
+Server Role:dc
+DNS backend:SAMBA_INTERNAL
+#note: this should be the upstream DNS server
+DNS forwarder IP address: 192.168.1.1
+Administrator password: Something!S3cure!
+
+# Remove upstream DNS from /etc/network/interfaces
+sudo nano /etc/network/interfaces
+dns-nameservers 192.168.0.200 #REMOVE 192.168.1.1
+
+# REBOOT
+sudo reboot
+
+# Set up kerberos
+  # Move original kerberos file to a safe place
+   $sudo mv /etc/krb5.conf /etc/krb5.conf.orig
+  # Link the samba created kerberos file to it's config location
+   $sudo ln -sf /var/lib/samba/private/krb5.conf /etc/krb5.conf
+   
+# DONE!!
